@@ -1,6 +1,10 @@
 import asyncio
+import nest_asyncio
 from pyrogram import Client, filters, enums
 from g4f.client import Client as AIClient
+
+# Railway asinxron xatoligini tuzatish
+nest_asyncio.apply()
 
 # --- SOZLAMALAR ---
 API_ID = 30858730
@@ -16,15 +20,15 @@ app = Client(
 
 ai_client = AIClient()
 
-print("Userbot Railway-da muvaffaqiyatli ishga tushdi...")
+print("--- Userbot Railway-da muvaffaqiyatli ishga tushdi! ---")
 
 @app.on_message(filters.private & ~filters.me & filters.text)
 async def ai_handler(client, message):
     try:
-        # Xatolikni oldini olish uchun "typing" statusini xavfsiz usulda yuboramiz
+        # Typing status
         await client.send_chat_action(message.chat.id, enums.ChatAction.TYPING)
         
-        # AI dan javob olish
+        # AI dan javob so'rash
         response = ai_client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
@@ -35,20 +39,12 @@ async def ai_handler(client, message):
         
         answer = response.choices[0].message.content
 
-        # Javob bo'sh bo'lmasligini tekshirish
         if answer:
             await asyncio.sleep(1)
             await message.reply_text(answer)
-        else:
-            print("AI bo'sh javob qaytardi.")
 
     except Exception as e:
-        print(f"Xatolik yuz berdi: {e}")
-        # Xatolik bo'lganda bot to'xtab qolmasligi uchun
-        try:
-            await message.reply_text("Hozircha javob bera olmayman, birozdan so'ng urinib ko'ring.")
-        except:
-            pass
+        print(f"Xatolik: {e}")
 
 if __name__ == "__main__":
     app.run()
