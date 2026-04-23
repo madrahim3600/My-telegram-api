@@ -1,9 +1,10 @@
 import asyncio
 import nest_asyncio
 from pyrogram import Client, filters, enums
+import g4f
 from g4f.client import Client as AIClient
 
-# Railway asinxron xatoligini tuzatish
+# Asinxron muammolarni tuzatish
 nest_asyncio.apply()
 
 # --- SOZLAMALAR ---
@@ -18,33 +19,45 @@ app = Client(
     session_string=SESSION_STRING
 )
 
+# AI Clientni yaratishda xatoliklarni kamaytirish uchun modelni dinamik tanlaymiz
 ai_client = AIClient()
 
-print("--- Userbot Railway-da muvaffaqiyatli ishga tushdi! ---")
+print("--- Userbot Railway-da ISHLAMOQDA! ---")
 
 @app.on_message(filters.private & ~filters.me & filters.text)
 async def ai_handler(client, message):
     try:
-        # Typing status
+        # Typing status yuborish
         await client.send_chat_action(message.chat.id, enums.ChatAction.TYPING)
         
-        # AI dan javob so'rash
-        response = ai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "Siz aqlli yordamchisiz. O'zbek tilida qisqa javob bering."},
-                {"role": "user", "content": message.text}
-            ]
-        )
-        
-        answer = response.choices[0].message.content
+        # AI dan javob olish - bir nechta modelni sinab ko'rish (Fallback)
+        try:
+            response = ai_client.chat.completions.create(
+                model=g4f.models.default, # Eng yaxshi ishlaydigan modelni avtomatik tanlaydi
+                messages=[
+                    {"role": "system", "content": "Siz aqlli yordamchisiz. O'zbek tilida qisqa javob bering."},
+                    {"role": "user", "content": message.text}
+                ]
+            )
+            answer = response.choices[0].message.content
+        except Exception:
+            # Agar default model xato bersa, muqobil modelni sinaymiz
+            response = ai_client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": message.text}]
+            )
+            answer = response.choices[0].message.content
 
-        if answer:
+        if answer and len(answer) > 0:
             await asyncio.sleep(1)
             await message.reply_text(answer)
+        else:
+            print("AI bo'sh javob qaytardi.")
 
     except Exception as e:
         print(f"Xatolik: {e}")
+        # Server bloklangan bo'lsa yoki boshqa xatolikda foydalanuvchiga bildirish (ixtiyoriy)
+        # await message.reply_text("Kechirasiz, hozirda javob berishda texnik muammo yuzaga keldi.")
 
 if __name__ == "__main__":
     app.run()
