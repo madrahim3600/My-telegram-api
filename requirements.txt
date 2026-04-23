@@ -2,3 +2,4 @@ pyrogram
 tgcrypto
 g4f==0.2.8.1
 curl_cffi
+nest_asyncio
